@@ -217,6 +217,12 @@ function createPlayerPlane() {
             pitch: 0,     // Góc ngẩng lên/cúi xuống
             bankAngle: 0, // Góc nghiêng
             sensitivity: 0.003 // Độ nhạy khi di chuyển chuột
+        },
+        // Thêm cài đặt cho camera theo máy bay
+        cameraSettings: {
+            distance: 8,      // Khoảng cách từ máy bay đến camera
+            height: 2,        // Độ cao của camera so với máy bay
+            smoothness: 0.05  // Độ mượt khi camera di chuyển (0-1)
         }
     };
     
@@ -458,14 +464,14 @@ function setupPointerLock() {
         
         // Cập nhật góc pitch (ngẩng lên/cúi xuống) dựa trên chuyển động dọc
         mouseControl.pitch -= movementY * mouseControl.sensitivity;
-        
+           
         // Giới hạn góc pitch để tránh lật ngược
         mouseControl.pitch = Math.max(-Math.PI/4, Math.min(Math.PI/4, mouseControl.pitch));
         
         // Đồng thời tạo góc nghiêng khi quay trái/phải
         mouseControl.bankAngle = -movementX * mouseControl.sensitivity * 2;
     }
-    
+        
     // Đăng ký sự kiện Pointer Lock
     document.addEventListener('pointerlockchange', pointerLockChange, false);
     document.addEventListener('mozpointerlockchange', pointerLockChange, false);
@@ -605,7 +611,7 @@ function animate() {
     for (let i = bullets.length - 1; i >= 0; i--) {
         // Di chuyển theo hướng của đạn
         bullets[i].position.addScaledVector(bullets[i].userData.direction, 0.5);
-        
+           
         // Xóa đạn nếu bay quá xa
         if (bullets[i].position.distanceTo(plane.position) > 50) {
             scene.remove(bullets[i]);
@@ -656,14 +662,31 @@ function animate() {
             enemies[i].position.x = Math.random() * 30 - 15;
         }
     }
-    // Di chuyển camera theo máy bay và chuột
-    const radius = 8;
+    // Di chuyển camera theo hướng máy bay
+    const cameraSettings = planeData.cameraSettings;
     const angle = mouseX * Math.PI / 4; // Góc xoay trái/phải tối đa 45 độ
-    const pitch = 3 + mouseY * 2; // Độ cao camera thay đổi theo mouseY
-    camera.position.x = plane.position.x + Math.sin(angle) * radius;
-    camera.position.z = plane.position.z + Math.cos(angle) * radius;
-    camera.position.y = plane.position.y + pitch;
-    camera.lookAt(plane.position.x, plane.position.y, plane.position.z);
+    // Tính vị trí camera dựa trên hướng của máy bay
+    const radius = cameraSettings.distance;
+    const pitch = mouseY * Math.PI / 8; // Độ cao camera thay đổi theo mouseY
+    
+    // Vector hướng ngược với hướng máy bay (để camera ở phía sau)
+    const backward = new THREE.Vector3(0, 0, -1);
+    backward.applyQuaternion(plane.quaternion);
+    
+    // Vị trí mong muốn của camera: phía sau máy bay một khoảng cách
+    const targetCameraPosition = new THREE.Vector3();
+    targetCameraPosition.copy(plane.position);
+    targetCameraPosition.addScaledVector(backward, cameraSettings.distance);
+    targetCameraPosition.y += cameraSettings.height;
+    
+    // Di chuyển camera mượt đến vị trí mới
+    camera.position.lerp(targetCameraPosition, cameraSettings.smoothness);
+    
+    // Camera luôn nhìn vào máy bay - nhìn hơi cao hơn máy bay một chút để tạo góc nhìn đẹp hơn
+    const lookAtPosition = new THREE.Vector3();
+    lookAtPosition.copy(plane.position);
+    lookAtPosition.y += 0.5; // Nhìn cao hơn máy bay một chút
+    camera.lookAt(lookAtPosition);
     
     renderer.render(scene, camera);
 }
