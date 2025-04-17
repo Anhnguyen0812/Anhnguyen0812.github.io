@@ -4,8 +4,8 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('gameCanvas') });
 renderer.setSize(window.innerWidth, window.innerHeight);
 
-// Thêm sương mù cho chiều sâu
-scene.fog = new THREE.Fog(0x87ceeb, 20, 60);
+// Thêm sương mù cho chiều sâu - điều chỉnh cho bản đồ lớn hơn
+scene.fog = new THREE.Fog(0x87ceeb, 50, 150);
 
 // Thêm ánh sáng môi trường và ánh sáng bán cầu
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
@@ -26,8 +26,8 @@ scene.add(light);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-// Thêm mặt đất (ground)
-const groundGeometry = new THREE.PlaneGeometry(100, 100, 32, 32);
+// Thêm mặt đất (ground) - tăng kích thước lên đáng kể
+const groundGeometry = new THREE.PlaneGeometry(500, 500, 64, 64);
 const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x6b8e23, roughness: 0.7, metalness: 0.2 });
 const ground = new THREE.Mesh(groundGeometry, groundMaterial);
 ground.rotation.x = -Math.PI / 2;
@@ -248,7 +248,7 @@ function createTextTexture(text) {
 const plane = createPlayerPlane();
 scene.add(plane);
 
-// Cây cối (dùng khối vuông)
+// Cây cối (dùng khối vuông) - tăng số lượng và phạm vi
 function addTree(x, z) {
     // Thân cây là khối vuông
     const trunk = new THREE.Mesh(
@@ -268,11 +268,12 @@ function addTree(x, z) {
     leaves.castShadow = true;
     scene.add(leaves);
 }
-for (let i = 0; i < 20; i++) {
-    addTree(Math.random() * 40 - 20, Math.random() * 40 - 20);
+// Tăng số lượng cây và phạm vi phân bố
+for (let i = 0; i < 200; i++) {
+    addTree(Math.random() * 200 - 100, Math.random() * 200 - 100);
 }
 
-// Đám mây (dùng khối vuông)
+// Đám mây (dùng khối vuông) - tăng số lượng và phạm vi
 function addCloud(x, y, z) {
     const cloud = new THREE.Mesh(
         new THREE.BoxGeometry(1.2, 0.7, 0.7),
@@ -282,8 +283,9 @@ function addCloud(x, y, z) {
     cloud.castShadow = false;
     scene.add(cloud);
 }
-for (let i = 0; i < 10; i++) {
-    addCloud(Math.random() * 40 - 20, Math.random() * 5 + 5, Math.random() * 40 - 20);
+// Tăng số lượng mây và phạm vi phân bố
+for (let i = 0; i < 50; i++) {
+    addCloud(Math.random() * 200 - 100, Math.random() * 10 + 5, Math.random() * 200 - 100);
 }
 
 // Đạn
@@ -346,9 +348,9 @@ function addEnemy(x, z) {
     scene.add(enemy);
     enemies.push(enemy);
 }
-// Thêm 5 máy bay địch ở các vị trí ngẫu nhiên phía trước
-for (let i = 0; i < 5; i++) {
-    addEnemy(Math.random() * 30 - 15, -10 - Math.random() * 20);
+// Thêm 10 máy bay địch ở các vị trí ngẫu nhiên phía trước (tăng số lượng)
+for (let i = 0; i < 10; i++) {
+    addEnemy(Math.random() * 150 - 75, -20 - Math.random() * 100);
 }
 
 // Đạn của địch
@@ -369,8 +371,8 @@ function shootEnemyBullet(enemy) {
     enemyBullets.push(bullet);
 }
 
-// Thời gian bắn của từng máy bay địch
-const enemyShootTimers = Array(5).fill(0);
+// Thời gian bắn của từng máy bay địch - cập nhật để phù hợp với 10 máy bay
+const enemyShootTimers = Array(10).fill(0);
 
 // Điều khiển
 const keys = {};
@@ -595,9 +597,9 @@ function animate() {
         }
     }
     
-    // Giới hạn vùng bay
-    plane.position.x = Math.max(-20, Math.min(20, plane.position.x));
-    plane.position.z = Math.max(-20, Math.min(20, plane.position.z));
+    // Điều chỉnh giới hạn vùng bay - mở rộng đáng kể
+    plane.position.x = Math.max(-100, Math.min(100, plane.position.x));
+    plane.position.z = Math.max(-100, Math.min(100, plane.position.z));
     
     // Quay cánh quạt máy bay
     plane.children.forEach(child => {
@@ -612,8 +614,9 @@ function animate() {
         // Di chuyển theo hướng của đạn
         bullets[i].position.addScaledVector(bullets[i].userData.direction, 0.5);
            
+        // Điều chỉnh phạm vi xóa đạn
         // Xóa đạn nếu bay quá xa
-        if (bullets[i].position.distanceTo(plane.position) > 50) {
+        if (bullets[i].position.distanceTo(plane.position) > 200) {
             scene.remove(bullets[i]);
             bullets.splice(i, 1);
         }
@@ -632,9 +635,9 @@ function animate() {
         enemy.position.x += toPlayer.x * 0.04;
         enemy.position.z += 0.05 + toPlayer.z * 0.03;
         // Nếu máy bay địch vượt qua người chơi thì reset lại phía xa
-        if (enemy.position.z > 20) {
-            enemy.position.z = -20 - Math.random() * 20;
-            enemy.position.x = Math.random() * 30 - 15;
+        if (enemy.position.z > 100) {
+            enemy.position.z = -100 - Math.random() * 50;
+            enemy.position.x = Math.random() * 150 - 75;
         }
         // Bắn đạn về phía người chơi mỗi 1.5 giây
         enemyShootTimers[i] -= 1/60;
@@ -647,8 +650,9 @@ function animate() {
     for (let i = enemyBullets.length - 1; i >= 0; i--) {
         const bullet = enemyBullets[i];
         bullet.position.addScaledVector(bullet.userData.direction, 0.25);
+        // Điều chỉnh phạm vi xóa đạn địch
         // Nếu đạn bay quá xa thì xóa
-        if (bullet.position.distanceTo(plane.position) > 50) {
+        if (bullet.position.distanceTo(plane.position) > 200) {
             scene.remove(bullet);
             enemyBullets.splice(i, 1);
         }
